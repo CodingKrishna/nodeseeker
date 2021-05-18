@@ -10,7 +10,7 @@ const URL = 'https://www.amfiindia.com/spages/NAVAll.txt'
 const FUNDS_KEY = "funds"
 const TIMEOUT = parseInt(process.env.TIMEOUT ?? 1800000)
 
-async function getData() {
+async function fetchRawData() {
     let webpage_text = ''
     try {
         let webpage = await fetch(URL)
@@ -21,8 +21,8 @@ async function getData() {
     return webpage_text
 }
 
-function tokenize(text) {
-    let lines = text.split(/\r\n|\r|\n/)
+function extractFunds(webpage) {
+    let lines = webpage.split(/\r\n|\r|\n/)
     lines = lines.filter(element => element !== ' ')
     let funds = {}
     lines.forEach(element => {
@@ -54,8 +54,8 @@ app.get('/getNAV/:scheme_code', async (req, res) => {
         res.status(200).send(JSON.parse(entry)[scheme_code])
     } else {
         console.log("Fetching from API");
-        let navdata = await getData()
-        let funds = tokenize(navdata)
+        let navdata = await fetchRawData()
+        let funds = extractFunds(navdata)
         fundCache.put(FUNDS_KEY, JSON.stringify(funds), TIMEOUT)
         res.status(200).send(funds[scheme_code])
     }
