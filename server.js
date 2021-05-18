@@ -2,13 +2,18 @@ import express from 'express'
 import fetch from 'node-fetch'
 import cache from 'memory-cache'
 import dotenv from 'dotenv'
+import router from './swagger.js'
 
-dotenv.config()
 const app = express()
 const fundCache = new cache.Cache()
+
+app.use('/', router)
+dotenv.config()
+
 const URL = 'https://www.amfiindia.com/spages/NAVAll.txt'
 const FUNDS_KEY = "funds"
 const TIMEOUT = parseInt(process.env.TIMEOUT ?? 1800000)
+
 
 async function fetchRawData() {
     let webpage_text = ''
