@@ -30,8 +30,8 @@ function tokenize(text) {
         if (re.test(element)) {
             let attrs = element.match(re)
             funds[attrs[1]] = {
-                'scheme_code': attrs[1],
-                'scheme_name': attrs[4],
+                'schemeCode': attrs[1],
+                'schemeName': attrs[4],
                 'nav': attrs[5],
                 'date': attrs[6]
             }
@@ -40,7 +40,7 @@ function tokenize(text) {
     return funds
 }
 
-app.get('/getNav/:scheme_code', async (req, res) => {
+app.get('/getNAV/:scheme_code', async (req, res) => {
     const { scheme_code } = req.params
     const { force_update } = req.query
     console.log(`Request for NAV, scheme code:${scheme_code}, force update:${force_update}`);
