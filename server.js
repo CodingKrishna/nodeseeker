@@ -13,7 +13,8 @@ dotenv.config()
 const URL = 'https://www.amfiindia.com/spages/NAVAll.txt'
 const FUNDS_KEY = "funds"
 const TIMEOUT = parseInt(process.env.TIMEOUT ?? 1800000)
-const TIMEZONE = process.env.TIMEZONE ?? "en-IN"
+const COUNTRY = process.env.COUNTRY ?? "en-IN"
+const TIMEZONE = process.env.TIMEZONE ?? "Asia/Kolkata"
 
 
 async function fetchRawData() {
@@ -40,7 +41,10 @@ function extractFunds(webpage) {
                 'schemeName': attrs[4],
                 'nav': attrs[5],
                 'date': attrs[6],
-                'updatedAt': new Date(Date.now()).toLocaleString(TIMEZONE)
+                'updatedAt': new Date(Date.now()).toLocaleString(
+                    COUNTRY,
+                    {"timeZone": TIMEZONE}
+                )
             }
         }
     });
