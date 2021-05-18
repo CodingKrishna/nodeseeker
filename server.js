@@ -1,27 +1,29 @@
 import express from 'express'
 import fetch from 'node-fetch'
-import redis from 'redis'
-import fs from 'fs'
-const app = express()
-URL = 'https://www.amfiindia.com/spages/NAVAll.txt'
+import cache from 'memory-cache'
+import dotenv from 'dotenv'
 
-const redisPort = 6379
-const client = redis.createClient(process.env.REDIS_URL || redisPort);
+dotenv.config()
+const app = express()
+const fundCache = new cache.Cache()
+const URL = 'https://www.amfiindia.com/spages/NAVAll.txt'
+const FUNDS_KEY = "funds"
+const TIMEOUT = parseInt(process.env.TIMEOUT ?? 1800000)
 
 async function getData() {
-    let response = ''
+    let webpage_text = ''
     try {
-        let res = await fetch(URL)
-        response = await res.text()
+        let webpage = await fetch(URL)
+        webpage_text = await webpage.text()
     } catch (e) {
-        console.log(e)
+        console.error(e)
     }
-    return response
+    return webpage_text
 }
 
 function tokenize(text) {
     let lines = text.split(/\r\n|\r|\n/)
-    lines = lines.filter(element => element !==' ')
+    lines = lines.filter(element => element !== ' ')
     let funds = {}
     lines.forEach(element => {
         let re = new RegExp('(.*);(.*);(.*);(.*);(.*);(.*)');
@@ -38,40 +40,27 @@ function tokenize(text) {
     return funds
 }
 
-
-
-app.get('/getNav/:scheme_code', (req, res) => {
+app.get('/getNav/:scheme_code', async (req, res) => {
     const { scheme_code } = req.params
     const { force_update } = req.query
+    console.log(`Request for NAV, scheme code:${scheme_code}, force update:${force_update}`);
 
     if (force_update === 'true') {
-        console.log(force_update);
-        client.del("funds")
+        fundCache.clear()
     }
-    try {
-        client.get("funds", async (err, data) => {
-            if (err) {
-                console.error(err)
-                throw err
-            }
-
-            if (data) {
-                console.log("Successfully retrieved from Redis");
-                res.status(200).send(JSON.parse(data)[scheme_code])
-            } else {
-                console.log("Fetching from API");
-                let navdata = await getData()
-                let funds = tokenize(navdata)
-                client.setex("funds", 1800, JSON.stringify(funds))
-                res.status(200).send(funds[scheme_code])
-            }
-
-        })
-    } catch (err) {
-        res.status(500).send({ error: err.message });
+    const entry = fundCache.get(FUNDS_KEY)
+    if (entry) {
+        console.log("Successfully retrieved from cache");
+        res.status(200).send(JSON.parse(entry)[scheme_code])
+    } else {
+        console.log("Fetching from API");
+        let navdata = await getData()
+        let funds = tokenize(navdata)
+        fundCache.put(FUNDS_KEY, JSON.stringify(funds), TIMEOUT)
+        res.status(200).send(funds[scheme_code])
     }
 })
 
 app.listen(process.env.PORT || 5000, () => {
-    console.log('server started.')
+    console.log('Server is up!')
 })
