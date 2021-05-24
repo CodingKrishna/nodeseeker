@@ -1,9 +1,4 @@
-import express from 'express'
-import swaggerUi from 'swagger-ui-express'
-import swaggerJsdoc from 'swagger-jsdoc'
-
-const router = express.Router();
-const options = {
+const spec = {
     definition: {
         openapi: '3.0.0',
         info: {
@@ -11,7 +6,7 @@ const options = {
             version: '1.0.0',
         },
         paths: {
-            "/getNAV/{schemeCode}": {
+            "/rest/getNAV/{schemeCode}": {
                 "get": {
                     "tags": [
                         "NAV Controller"
@@ -51,10 +46,6 @@ const options = {
         }
     },
     apis: ['server.js'],
-};
+}
 
-const openapiSpecification = await swaggerJsdoc(options);
-router.use('/', swaggerUi.serve);
-router.get('/', swaggerUi.setup(openapiSpecification));
-
-export default router
+export default spec
